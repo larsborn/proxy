@@ -49,7 +49,7 @@ func (s *Server) LoggerMiddleware(next http.Handler) http.Handler {
 		rw := &responseWriter{ResponseWriter: w, status: http.StatusOK}
 		next.ServeHTTP(rw, r)
 
-		s.logger.Info("request",
+		s.logger.Info("http request",
 			"request_id", requestID,
 			"method", r.Method,
 			"path", r.URL.Path,
