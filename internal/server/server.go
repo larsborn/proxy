@@ -43,6 +43,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -268,7 +269,7 @@ func (s *Server) Start() error {
 		"listen", s.cfg.Listen,
 		"base_url", s.cfg.BaseURL,
 		"storage", s.storage.URL(),
-		"database", s.cfg.Database.Path)
+		"database", s.databaseDescriptor())
 	go s.updateCacheStatsMetrics()
 	go s.startEvictionLoop(bgCtx)
 
@@ -286,6 +287,19 @@ func (s *Server) updateCacheStatsMetrics() {
 	for range ticker.C {
 		s.updateCacheStats()
 	}
+}
+
+// databaseDescriptor returns a URL-shaped descriptor for the configured
+// database so the startup log line stays visually consistent with the
+// storage URL. For Postgres, credentials in the URL are redacted.
+func (s *Server) databaseDescriptor() string {
+	if s.cfg.Database.Driver == "postgres" {
+		if u, err := url.Parse(s.cfg.Database.URL); err == nil {
+			return u.Redacted()
+		}
+		return s.cfg.Database.URL
+	}
+	return "sqlite:" + s.cfg.Database.Path
 }
 
 func (s *Server) updateCacheStats() {
